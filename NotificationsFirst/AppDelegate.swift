@@ -7,15 +7,26 @@
 //
 
 import UIKit
+import UserNotifications
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    func setCategories() {
+        let textInputAction = UNTextInputNotificationAction(identifier: "text.input", title: "Comment", options: [])
+        let nextStepAction = UNNotificationAction(identifier: "next.step.action", title: "Next", options: [])
+        let stopAction = UNNotificationAction(identifier: "stop.action", title: "Stop", options: [])
+        let snoozeAction = UNNotificationAction(identifier: "snooze.action", title: "Snooze", options: [])
+        let pizzaCategory = UNNotificationCategory(identifier: "pizza.steps.category", actions: [nextStepAction,stopAction,textInputAction], intentIdentifiers: [], options: [])
+        let snoozeCategory = UNNotificationCategory(identifier: "snooze.category", actions: [snoozeAction], intentIdentifiers: [], options: [])
+        UNUserNotificationCenter.current().setNotificationCategories([pizzaCategory,snoozeCategory])
+    }
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        setCategories()
         return true
     }
 

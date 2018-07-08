@@ -29,6 +29,7 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
         content.title = "A Timed Piza Step"
         content.body = "Making Pizza"
         content.userInfo = ["step": 0]
+        content.categoryIdentifier = "pizza.steps.category"
         return content
     }
     func addNotification(trigger : UNNotificationTrigger?, content: UNMutableNotificationContent, identifier: String) {
@@ -46,6 +47,7 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
             let content = UNMutableNotificationContent()
             content.title = "A sceduled pizza"
             content.body = "time to make a Pizza"
+            content.categoryIdentifier = "snooze.category"
             let unitFlags: Set<Calendar.Component> = [.minute,.hour,.second]
             var date = Calendar.current.dateComponents(unitFlags, from: Date())
             date.second = date.second! + 15
@@ -61,8 +63,8 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
             pizzaNumber += 1
             content.subtitle = "Pizza \(pizzaNumber)"
             
-//            let trigget = UNTimeIntervalNotificationTrigger(timeInterval: 10.0, repeats: false)
-            let trigget = UNTimeIntervalNotificationTrigger(timeInterval: 60.0, repeats: true)
+            let trigget = UNTimeIntervalNotificationTrigger(timeInterval: 7.0, repeats: false)
+//            let trigget = UNTimeIntervalNotificationTrigger(timeInterval: 60.0, repeats: true)
             addNotification(trigger: trigget, content: content, identifier: "message.pizza.\(pizzaNumber)")
         }
     }
@@ -123,7 +125,32 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         completionHandler([.alert,.sound])
     }
-   
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+        let action = response.actionIdentifier
+        let request = response.notification.request
+        if action == "next.step.action" {
+            updatePizzaStep(request: request)
+        }
+        if action == "stop.action" {
+            UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [request.identifier])
+        }
+        if action == "snooze.action" {
+            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 5.0, repeats: false)
+            let newRequest = UNNotificationRequest(identifier: request.identifier, content: request.content, trigger: trigger)
+            UNUserNotificationCenter.current().add(newRequest) { (error) in
+                if error != nil {
+                    print("\(error?.localizedDescription ?? "error snooze")")
+                }
+            }
+        }
+        if action == "text.input" {
+            let textResponse = response as! UNTextInputNotificationResponse
+            let newContent = request.content.mutableCopy() as! UNMutableNotificationContent
+            newContent.subtitle = textResponse.userText
+            addNotification(trigger: request.trigger, content: newContent, identifier: request.identifier)
+        }
+        completionHandler()
+    }
 
 
 }
