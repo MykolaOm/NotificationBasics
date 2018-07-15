@@ -12,6 +12,7 @@ import UserNotifications
 class ViewController: UIViewController, UNUserNotificationCenterDelegate {
     var pizzaNumber = 0
     let pizzaSteps = ["Make Pizza","Roll Dough","Add Sause","Add Cheese","Add Ingrefients","Bake ","Done"]
+    
     func updatePizzaStep(request: UNNotificationRequest){
         if request.identifier.hasPrefix("message.pizza") {
             var stepNumber = request.content.userInfo["step"] as! Int
@@ -20,6 +21,7 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
             updatedContent.body = pizzaSteps[stepNumber]
             updatedContent.userInfo["step"] = stepNumber
             updatedContent.subtitle = request.content.subtitle
+            updatedContent.attachments = pizzaStepImage(step: stepNumber)
             addNotification(trigger: request.trigger, content: updatedContent, identifier: request.identifier)
         }
     }
@@ -30,6 +32,7 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
         content.body = "Making Pizza"
         content.userInfo = ["step": 0]
         content.categoryIdentifier = "pizza.steps.category"
+        content.attachments = pizzaGif()
         return content
     }
     func addNotification(trigger : UNNotificationTrigger?, content: UNMutableNotificationContent, identifier: String) {
@@ -48,6 +51,9 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
             content.title = "A sceduled pizza"
             content.body = "time to make a Pizza"
             content.categoryIdentifier = "snooze.category"
+            let attachment = notificationAttachment(for: "pizza.video", resource: "PizzaMovie", type: "mp4")
+//            let attachment = notificationAttachment(for: "EHuliUke.music", resource: "EHuliUke", type: "mp3")
+            content.attachments = attachment
             let unitFlags: Set<Calendar.Component> = [.minute,.hour,.second]
             var date = Calendar.current.dateComponents(unitFlags, from: Date())
             date.second = date.second! + 15
@@ -151,7 +157,45 @@ class ViewController: UIViewController, UNUserNotificationCenterDelegate {
         }
         completionHandler()
     }
-
-
+    
+    func notificationAttachment(for identifier:  String, resource: String, type: String) -> [UNNotificationAttachment] {
+        let extendedIdentified = identifier + "." + type
+        guard let path = Bundle.main.path(forResource: resource, ofType: type)
+        else {
+            print("the file \(resource).\(type) was not found")
+            return[]
+        }
+        let videoURL = URL(fileURLWithPath: path)
+        do{
+            let attachment = try UNNotificationAttachment(identifier: extendedIdentified, url: videoURL, options: nil)
+            return [attachment]
+        } catch {
+            print ("the attachment was not loaded")
+            return[]
+        }
+    }
+    func pizzaGif() -> [UNNotificationAttachment] {
+        let extendedIdentified = "pizza.gif"
+        guard let path = Bundle.main.path(forResource: "MakePizza_0", ofType: "gif")
+            else {
+                print("the file was not found")
+                return[]
+        }
+        let videoURL = URL(fileURLWithPath: path)
+        do{
+            let attachment = try UNNotificationAttachment(identifier: extendedIdentified, url: videoURL, options: [UNNotificationAttachmentOptionsThumbnailTimeKey : 11])
+            return [attachment]
+        } catch {
+            print ("the attachment was not loaded")
+            return[]
+        }
+    }
+    func pizzaStepImage(step : Int) -> [UNNotificationAttachment] {
+        let stepString = String(format: "%i", step)
+        let identifier = "pizza.step." + stepString
+        let resource = "MakePizza_"+stepString
+        let type = "jpg"
+        return notificationAttachment(for: identifier, resource: resource, type: type)
+    }
 }
 
